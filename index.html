@@ -23,8 +23,19 @@ function getTaskText(){
     console.log("The input value is: " + input.value);
     return text;
 }
+
 function addTask(){
-    getTaskText();
+    const taskText = getTaskText();
+    addTaskItem(taskText);
+}
+
+function addTaskItem(taskText){
+    const li = document.createElement('li');
+    const taskSpan = document.createElement('span');
+    taskSpan.textContent = taskText;
+    li.appendChild(taskSpan);
+    
+    document.getElementById('taskList').appendChild(li);
 }
 </script>
 
