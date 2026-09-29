@@ -19,6 +19,11 @@
     #map{
         height: 500px;
     }
+    .popup-image{
+        max-width: 200px;
+        height: auto;
+        object-fit: fill;
+    }
 </style>
 <body>
     <h1>Simple Map</h1>
@@ -26,15 +31,41 @@
 </body>
 <script>
 
-function initMap(){
+function initMap(mapDataUrl){
+
     const map= L.map('map').setView([8.360,124.868],17);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
         maxZoom:19,
         attribution:'&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
+
+    fetch(mapDataUrl)
+        .then(response => response.json())
+        .then(data=>{
+
+            //Markers
+            data.forEach(pin => {
+                const type = pin.locationType || "Other";
+
+                //Marker and Popup
+                const marker = L.marker([pin.lat, pin.lng]).addTo(map);
+                const img = `<img src='${pin.img}' class="popup-image">`;
+                    marker.bindPopup(`
+                        ${img} <br>
+                        <b>${pin.title}<br>
+                        ${pin.description}<br>
+                        ${pin.locationType}
+                `);
+                console.log(`${pin.name} Loaded ` + Date());
+
+            });
+        })
+
 }
 
-initMap();
+document.addEventListener("DOMContentLoaded",()=>{
+    initMap('campus-map.json');
+})
 
 </script>
 </html>
