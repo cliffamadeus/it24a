@@ -40,25 +40,45 @@ function initMap(mapDataUrl){
     }).addTo(map);
 
     fetch(mapDataUrl)
-        .then(response => response.json())
-        .then(data=>{
+    .then(response => response.json())
+    .then(data => {
 
-            //Markers
-            data.forEach(pin => {
-                const type = pin.locationType || "Other";
+        // Marker
+        data.forEach(pin => {
 
-                //Marker and Popup
-                const marker = L.marker([pin.lat, pin.lng]).addTo(map);
-                const img = `<img src='${pin.img}' class="popup-image">`;
-                    marker.bindPopup(`
-                        ${img} <br>
-                        <b>${pin.title}<br>
-                        ${pin.description}<br>
-                        ${pin.locationType}
-                `);
-                
-            });
-    })
+            const type = pin.locationType || "Other";
+
+            // Marker and Popup
+            const marker = L.marker([
+                pin.lat,
+                pin.lng
+            ]).addTo(map);
+
+            // Popup Image
+            const img = `
+                <img
+                    src="${pin.img}"
+                    class="popup-image"
+                >
+            `;
+
+            // Marker Popup
+            marker.bindPopup(`
+                ${img}
+                <br>
+
+                <b>${pin.title}</b>
+                <br>
+
+                ${pin.description}
+                <br>
+
+                ${type}
+            `);
+
+        });
+
+    });
 
 }
 
