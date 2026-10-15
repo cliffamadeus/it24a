@@ -1,260 +1,102 @@
+
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Map</title>
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Maps</title>
-
-
-    <!-- Leaflet CSS -->
-    <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIINfQ3D/miZyoHS5obTRR9BMY="
-        crossorigin=""
-    >
-
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
-
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
+        .container {
+            display: flex;
+            gap: 15px;
         }
 
-
-        h1 {
-            padding: 0 20px;
+        #locations {
+            width: 250px;
         }
 
-
-        /* Main two-column layout */
-        .map-container {
-            display: grid;
-            grid-template-columns: 300px 1fr;
+        #map {
+            flex: 1;
             height: 500px;
         }
 
-
-        /* Pin column */
-        #pin-list {
-            overflow-y: auto;
-            border-right: 1px solid #ddd;
-            background: #f8f8f8;
-        }
-
-
-        /* Individual pin */
-        .pin-item {
-            padding: 15px;
+        .location {
+            padding: 10px;
             border-bottom: 1px solid #ddd;
             cursor: pointer;
         }
 
-
-        .pin-item:hover {
-            background: #eaeaea;
+        .location:hover {
+            background: #eee;
         }
 
-
-        .pin-title {
-            font-weight: bold;
-        }
-
-
-        .pin-type {
-            font-size: 13px;
-            color: #666;
-        }
-
-
-        /* Map */
-        #map {
-            height: 500px;
-        }
-
-
-        /* Popup image */
         .popup-image {
             max-width: 200px;
-            height: auto;
-            object-fit: fill;
         }
-
     </style>
-
 </head>
-
-
 <body>
 
-    <h1>Simple Map</h1>
+    <h1>Campus Map</h1>
 
+    <div class="container">
+        <div id="locations">
+            <h3>Locations</h3>
+            <div id="location-list"></div>
+        </div>
 
-    <div class="map-container">
-
-        <!-- Pin List -->
-        <div id="pin-list"></div>
-
-
-        <!-- Map -->
         <div id="map"></div>
-
     </div>
 
-
-    <!-- Leaflet JS -->
-    <script
-        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-        crossorigin="">
-    </script>
-
-
     <script>
+        const map = L.map('map').setView([8.360, 124.868], 17);
 
-        function initMap(mapDataUrl) {
+        const osm = L.tileLayer(
+            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            { maxZoom: 19 }
+        );
 
-            // Create map
-            const map = L.map('map').setView(
-                [8.360, 124.868],
-                17
-            );
+        const satellite = L.tileLayer(
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+        );
 
+        satellite.addTo(map);
 
-            // OpenStreetMap
-            L.tileLayer(
-                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                {
-                    maxZoom: 19,
+        L.control.layers({
+            "OpenStreetMap": osm,
+            "Satellite": satellite
+        }).addTo(map);
 
-                    attribution:
-                        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                }
-            ).addTo(map);
+        fetch('campus-map.json')
+            .then(response => response.json())
+            .then(data => {
+                data.forEach((pin, index) => {
+                    const marker = L.marker([pin.lat, pin.lng]).addTo(map);
 
+                    marker.bindPopup(`
+                        <strong>${pin.title}</strong><br>
+                        <img src="${pin.img}" class="popup-image">
+                    `);
 
-            // Load map data
-            fetch(mapDataUrl)
+                    const item = document.createElement('div');
+                    item.className = 'location';
+                    item.textContent = pin.title;
 
-                .then(response => response.json())
+                    item.onclick = () => {
+                        map.flyTo([pin.lat, pin.lng], 18);
+                        marker.openPopup();
+                    };
 
-                .then(data => {
-
-                    // Pin list container
-                    const pinList =
-                        document.getElementById('pin-list');
-
-
-                    // Process every pin
-                    data.forEach(pin => {
-
-                        const type =
-                            pin.locationType || "Other";
-
-
-                        // Create marker
-                        const marker = L.marker([
-                            pin.lat,
-                            pin.lng
-                        ]).addTo(map);
-
-
-                        // Popup image
-                        const img = `
-                            <img
-                                src="${pin.img}"
-                                class="popup-image"
-                            >
-                        `;
-
-
-                        // Marker popup
-                        marker.bindPopup(`
-                            ${img}
-                            <br>
-
-                            <b>${pin.title}</b>
-                            <br>
-
-                            ${pin.description}
-                            <br>
-
-                            ${type}
-                        `);
-
-
-                        // Create pin list item
-                        const pinItem =
-                            document.createElement('div');
-
-
-                        pinItem.className = 'pin-item';
-
-
-                        pinItem.innerHTML = `
-                            <div class="pin-title">
-                                ${pin.title}
-                            </div>
-
-                            <div class="pin-type">
-                                ${type}
-                            </div>
-                        `;
-
-
-                        // Fly to pin
-                        pinItem.addEventListener(
-                            'click',
-                            () => {
-
-                                map.flyTo(
-                                    [pin.lat, pin.lng],
-                                    19,
-                                    {
-                                        duration: 1.5
-                                    }
-                                );
-
-
-                                // Open popup
-                                marker.openPopup();
-
-                            }
-                        );
-
-
-                        // Add item to list
-                        pinList.appendChild(pinItem);
-
-                    });
-
-                })
-
-                .catch(error => {
-
-                    console.error(
-                        'Error loading map data:',
-                        error
-                    );
-
+                    document.getElementById('location-list')
+                        .appendChild(item);
                 });
-
-        }
-
-
-        // Initialize map
-        initMap('campus-map.json');
-
+            })
+            .catch(error => console.error('Error loading map:', error));
     </script>
 
 </body>
-
 </html>
