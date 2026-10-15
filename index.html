@@ -16,8 +16,30 @@
 
 </head>
 <style>
+    
+
+    #locations{
+        width:250px;
+    }
+
+    .location{
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+        cursor:pointer;
+    }
+
+    .location:hover{
+        background:#eee;
+    }
+
+    .container{
+        display:flex;
+        gap:15px;
+    }
+
     #map{
         height: 500px;
+        flex:1;
     }
     .popup-image{
         max-width: 200px;
@@ -26,8 +48,18 @@
     }
 </style>
 <body>
+
     <h1>Simple Map</h1>
-    <div id="map"></div>
+    
+    <div class="container">
+        <div id="locations">
+            <h3>Locations</h3>
+            <div id="location-list"></div>
+        </div>
+        
+        <div id="map"></div>        
+    </div>
+    
 </body>
 <script>
 
@@ -64,6 +96,18 @@ function initMap(mapDataUrl){
                     <hr>
                     ${image}
                 `);
+
+                // Flyto
+                const item = document.createElement('div');
+                item.className = 'location';
+                item.textContent = pin.title;
+
+                document.getElementById('location-list').appendChild(item);
+
+                item.onclick = () =>{
+                    map.flyTo([pin.lat,pin.lng],18);
+                    marker.openPopup();
+                }
             });
 
             // Layer Control
@@ -73,9 +117,7 @@ function initMap(mapDataUrl){
             }
 
             L.control.layers(baseMaps).addTo(map);
-
         });
-
 
 }
 
