@@ -3,108 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Maps</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""/>
+
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""></script>
+
 </head>
+<style>
+    
+
+    #locations{
+        width:250px;
+    }
+
+    .location{
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+        cursor:pointer;
+    }
+
+    .location:hover{
+        background:#eee;
+    }
+
+    .container{
+        display:flex;
+        gap:15px;
+    }
+
+    #map{
+        height: 500px;
+        flex:1;
+    }
+    .popup-image{
+        max-width: 200px;
+        height: auto;
+        object-fit: fill;
+    }
+</style>
 <body>
 
-    <h1>Todo List</h1>
-    <input type="text"
-            id="taskInput"
-            placeholder="Add a task"
-    /> 
-    <button onclick="addTask()">Add Task</button>
-    <ul id="taskList">Your tasks go here ...</ul>
-
+    <h1>Simple Map</h1>
+    
+    <div class="container">
+        <div id="locations">
+            <h3>Locations</h3>
+            <div id="location-list"></div>
+        </div>
+        
+        <div id="map"></div>        
+    </div>
+    
+</body>
 <script>
-function getTaskText(){
-    const input = document.getElementById('taskInput');
-    const text = input.value.trim();
 
-    console.log("The input value is: " + input.value);
-    return text;
-}
+function initMap(mapDataUrl){
+    // Render Map
+    const map= L.map('map').setView([8.360,124.868],17);
 
-function addTask(){
-    const taskText = getTaskText();
-    addTaskItem(taskText);
-}
+    //OpenStreetMap Layer
+    const openStreetMap = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+        maxZoom:19,
+        attribution:'&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    });
 
-function addTaskItem(taskText){
-    const li = document.createElement('li');
-    const taskSpan = document.createElement('span');
-    taskSpan.textContent = taskText;
-    li.appendChild(taskSpan);
-    
-    document.getElementById('taskList').appendChild(li);
+    //Satellite Layer
+    const satellite = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        {attribution:'Tiles (c) Esri -, Maxar, Earthstar Geographics, & GIS User Community'}
+    );
 
-    // Call createDoneButton() function
-    const doneBtn = createDoneButton(li);
-    li.appendChild(doneBtn);
+    satellite.addTo(map);
 
-    // Call createEditButton() function
-    const editBtn = createEditButton(li,taskSpan);
-    li.appendChild(editBtn);
+    // Render Pins
+    fetch(mapDataUrl)
+        .then(response=>response.json())
+        .then(data=>{
+            
+            data.forEach(pin=>{
+                const marker = L.marker([pin.lat,pin.lng]).addTo(map);
 
-    // Call createEditButton() function
-    const deleteBtn = createDeleteButton(li);
-    li.appendChild(deleteBtn);
-}
+                const image=`<img src='${pin.img}' class="popup-image">`; 
+                
+                marker.bindPopup(`
+                    ${pin.title}<br>
+                    <hr>
+                    ${image}
+                `);
 
-function createDoneButton(li){
-    const doneBtn = document.createElement("button");
-    doneBtn.textContent = "Done";
-    doneBtn.style.marginLeft="8px";
-    
-    doneBtn.onclick = () =>{
-        console.log(li);
-        li.classList.add("done");
-        const buttons = li.querySelectorAll("button");
+                // Flyto
+                const item = document.createElement('div');
+                item.className = 'location';
+                item.textContent = pin.title;
 
-        buttons.forEach(btn =>{
-            btn.disabled=true;
+                document.getElementById('location-list').appendChild(item);
+
+                item.onclick = () =>{
+                    map.flyTo([pin.lat,pin.lng],18);
+                    marker.openPopup();
+                }
+            });
+
+            // Layer Control
+            const baseMaps = {
+                "OpenStreetMap" : openStreetMap,
+                "Satellite" : satellite
+            }
+
+            L.control.layers(baseMaps).addTo(map);
         });
 
-        console.log("Task Completed", li.textContent, Date());
-    }
-
-    return doneBtn;
 }
 
-function createEditButton(li,taskSpan){
-    const editBtn = document.createElement("button");
-    editBtn.textContent = "Edit";
-    editBtn.style.marginLeft="8px";
-    editBtn.onclick = () => handleEditClick(li);
-    return editBtn;
-}
-
-function handleEditClick(li){
-    const currentText = li.firstChild.textContent.trim();
-    const newText = prompt("Edit your task", currentText);
-
-    if(newText !==null && newText.trim() !==""){
-        li.firstChild.textContent = newText.trim();
-        alert("Updated task");
-    }else{
-        alert("No changes made");
-    }
-
-}
-
-function createDeleteButton(li){
-    const deleteBtn = document.createElement("button");
-    deleteBtn.textContent ="Delete";
-    deleteBtn.style.marginLeft="8px";
-    deleteBtn.onclick=() => handleDeleteClick(li);
-    return deleteBtn;
-}
-
-function handleDeleteClick(li){
-    li.remove();
-    alert("Task Deleted");
-}
+initMap('campus-map.json');
 
 </script>
-
-</body>
 </html>
